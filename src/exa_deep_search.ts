@@ -1,6 +1,6 @@
 import { Static, Type } from "typebox";
 import { StringEnum } from "@mariozechner/pi-ai";
-import Exa, { type BaseSearchOptions, type DeepSearchType } from "exa-js";
+import { type Exa, type BaseSearchOptions, type DeepSearchType } from "exa-js";
 
 export const DeepSearchParams = Type.Object({
   query: Type.String({ description: "The search query" }),
@@ -12,7 +12,9 @@ export const DeepSearchParams = Type.Object({
       maximum: 100,
     }),
   ),
-  type: Type.Optional(StringEnum(["deep-lite", "deep", "deep-reasoning"] as const)),
+  type: Type.Optional(
+    StringEnum(["deep-lite", "deep", "deep-reasoning"] as const),
+  ),
   category: Type.Optional(
     StringEnum(
       [
