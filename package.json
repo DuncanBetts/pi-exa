@@ -1,0 +1,26 @@
+{
+  "name": "pi-web-search",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "clean": "rm -rf node_modules",
+    "build": "echo 'nothing to build (pi uses jiti)'",
+    "check": "tsc --noEmit",
+    "watch": "tsc --noEmit --watch"
+  },
+  "pi": {
+    "extensions": [
+      "./src/index.ts"
+    ]
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0"
+  },
+  "devDependencies": {
+    "@mariozechner/pi-coding-agent": "latest",
+    "tsx": "^4.21.0",
+    "typebox": "latest",
+    "typescript": "^5.7.0"
+  }
+}
