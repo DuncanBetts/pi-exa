@@ -15,7 +15,8 @@
     ]
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.29.0"
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "exa-js": "^2.12.1"
   },
   "devDependencies": {
     "@mariozechner/pi-coding-agent": "latest",
