@@ -1,7 +1,9 @@
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import type { TextContent } from "@mariozechner/pi-ai";
 import { Type } from "typebox";
+import Exa from "exa-js";
 import { connectToExaMcp } from "./exa_mcp_client";
+import { deepSearch, DeepSearchParams } from "./exa_deep_search";
 
 export default async function (pi: ExtensionAPI) {
   pi.registerFlag("exa-advanced", {
@@ -11,9 +13,55 @@ export default async function (pi: ExtensionAPI) {
     default: false,
   });
 
+  const exa = new Exa(process.env.EXA_API_KEY!);
   const client = await connectToExaMcp();
   const { tools } = await client.listTools();
 
+  pi.registerTool({
+    name: "deep_search_exa",
+    label: "deep_search_exa",
+    description:
+      "Perform deep web search using Exa. Supports deep-lite (fast), deep (balanced), and deep-reasoning (thorough) search modes.",
+    promptSnippet: "Deep web search for thorough research queries",
+    promptGuidelines: [
+      "Use exa_deep_search for comprehensive, multi-step research with synthesized answers, complex queries that requires breakdown and reasoning, or research focused queries. This tool is not for simple web searches.",
+    ],
+    parameters: DeepSearchParams,
+
+    async execute(_toolCallId, params, signal, onUpdate, _ctx) {
+      onUpdate?.({
+        content: [
+          {
+            type: "text",
+            text: `Performing Exa Deep Search...`,
+          },
+        ],
+        details: {},
+      });
+
+      const result = await deepSearch(exa, {
+        query: params.query,
+        numResults: params.numResults,
+        type: params.type,
+        category: params.category,
+      });
+
+      if (signal?.aborted) {
+        return {
+          content: [{ type: "text", text: "Request was cancelled" }],
+          details: {},
+        };
+      }
+
+      const text = JSON.stringify(result, null, 2);
+      return {
+        content: [{ type: "text" as const, text }],
+        details: {},
+      };
+    },
+  });
+
+  // load Exa search MCP tools
   for (const tool of tools) {
     if (
       tool.name === "web_search_advanced_exa" &&
