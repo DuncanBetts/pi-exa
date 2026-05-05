@@ -1,12 +1,53 @@
-import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import type { TextContent } from "@mariozechner/pi-ai";
+import { AuthStorage, type ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { Type } from "typebox";
-import Exa from "exa-js";
+import { getExa } from "./exa";
 import { connectToExaMcp } from "./exa_mcp_client";
 import { deepSearch, DeepSearchParams } from "./exa_deep_search";
 import { renderTruncatedResult } from "./utils";
 
+const EXA_PROVIDER = "exa";
+
+export function getExaApiKey(): string | undefined {
+  const authStorage = AuthStorage.create();
+  const cred = authStorage.get(EXA_PROVIDER);
+  if (cred?.type === "api_key" && cred.key) {
+    return cred.key;
+  }
+  return process.env.EXA_API_KEY;
+}
+
 export default async function (pi: ExtensionAPI) {
+  const authStorage = AuthStorage.create();
+  const exaApiKey = getExaApiKey();
+  const client = await connectToExaMcp(exaApiKey);
+  const { tools } = await client.listTools();
+
+  pi.registerCommand("exa-login", {
+    description: "Set your Exa API key",
+    handler: async (_args, ctx) => {
+      if (!ctx.hasUI) {
+        ctx.ui.notify(
+          "Set the EXA_API_KEY env var or run exa-login in the UI",
+          "info",
+        );
+        return;
+      }
+      const key = await ctx.ui.input("Exa API Key", "Enter your Exa API key");
+      if (key) {
+        authStorage.set(EXA_PROVIDER, { type: "api_key", key });
+        ctx.ui.notify("Exa API key saved to ~/.pi/agent/auth.json", "info");
+      }
+    },
+  });
+
+  pi.registerCommand("exa-logout", {
+    description: "Remove your Exa API key",
+    handler: async (_args, ctx) => {
+      authStorage.remove(EXA_PROVIDER);
+      ctx.ui.notify("Exa API key removed", "info");
+    },
+  });
+
   pi.registerFlag("exa-advanced", {
     description:
       "Enables the advanced Exa web search tool for more granular controls (~1200 extra tokens)",
@@ -14,9 +55,16 @@ export default async function (pi: ExtensionAPI) {
     default: false,
   });
 
-  const exa = new Exa(process.env.EXA_API_KEY!);
-  const client = await connectToExaMcp();
-  const { tools } = await client.listTools();
+  pi.on("session_start", async () => {
+    if (pi.getFlag("exa-advanced")) {
+      return;
+    }
+
+    const activeTools = pi.getActiveTools();
+    pi.setActiveTools(
+      activeTools.filter((name) => name !== "web_search_advanced_exa"),
+    );
+  });
 
   pi.registerTool({
     name: "deep_search_exa",
@@ -42,7 +90,7 @@ export default async function (pi: ExtensionAPI) {
         details: {},
       });
 
-      const result = await deepSearch(exa, {
+      const result = await deepSearch(getExa(exaApiKey), {
         query: params.query,
         numResults: params.numResults,
         type: params.type,
@@ -66,13 +114,6 @@ export default async function (pi: ExtensionAPI) {
 
   // load Exa search MCP tools
   for (const tool of tools) {
-    if (
-      tool.name === "web_search_advanced_exa" &&
-      !pi.getFlag("exa-advanced")
-    ) {
-      continue;
-    }
-
     pi.registerTool({
       name: tool.name,
       label: tool.name,
@@ -102,9 +143,9 @@ export default async function (pi: ExtensionAPI) {
             return {
               content: [
                 {
-                  type: "text",
+                  type: "text" as const,
                   text: text || "Tool call failed",
-                } satisfies TextContent,
+                },
               ],
               details: { isError: true },
             };
@@ -113,9 +154,9 @@ export default async function (pi: ExtensionAPI) {
           return {
             content: [
               {
-                type: "text",
+                type: "text" as const,
                 text: text || "No results",
-              } satisfies TextContent,
+              },
             ],
             details: {},
           };
@@ -124,9 +165,9 @@ export default async function (pi: ExtensionAPI) {
             return {
               content: [
                 {
-                  type: "text",
+                  type: "text" as const,
                   text: "Request was cancelled",
-                } satisfies TextContent,
+                },
               ],
               details: {},
             };
@@ -134,9 +175,9 @@ export default async function (pi: ExtensionAPI) {
           return {
             content: [
               {
-                type: "text",
+                type: "text" as const,
                 text: `Error: ${err instanceof Error ? err.message : String(err)}`,
-              } satisfies TextContent,
+              },
             ],
             details: { isError: true },
           };
