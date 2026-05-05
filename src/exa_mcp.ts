@@ -57,9 +57,12 @@ export async function closeExaMcp() {
     return;
   }
   const clientPromise = exaMcpClientPromise;
+  // if clientPromise is still calling into an eventual error,
+  // error handling in getExaMcp will not catch it, as the singleton
+  // is already cleared
   exaMcpClientPromise = undefined;
-  const client = await clientPromise;
-  await client.close();
+  const client = await clientPromise.catch(() => undefined);
+  await client?.close();
 }
 
 export async function getExaMcpTools(apiKey?: string): Promise<Tool[]> {
@@ -83,12 +86,10 @@ export async function getExaMcpTools(apiKey?: string): Promise<Tool[]> {
     await mkdir(dirname(EXA_MCP_CACHE_FILE), { recursive: true });
     await writeFile(EXA_MCP_CACHE_FILE, JSON.stringify(tools, null, 2));
     return tools;
-  } catch (err) {
-    // NOTE: no handling for when cache and MCP server isn't available
-    // triggers when cold install hits an offline server
+  } catch {
     if (cachedTools) {
       return cachedTools;
     }
-    throw err;
+    return [];
   }
 }

@@ -25,8 +25,16 @@ export async function getExaApiKey(mcp = false) {
 
 export default async function (pi: ExtensionAPI) {
   const authStorage = AuthStorage.create();
+  let mcpToolsLoaded = false;
 
-  pi.on("session_start", async () => {
+  pi.on("session_start", async (_event, ctx) => {
+    if (!mcpToolsLoaded) {
+      ctx.ui.notify(
+        "Exa MCP tools were not registered as the MCP server was unavailable.",
+        "warning",
+      );
+    }
+
     if (pi.getFlag("exa-advanced")) {
       return;
     }
@@ -164,6 +172,7 @@ export default async function (pi: ExtensionAPI) {
 
   // load Exa MCP tools
   const tools = await getExaMcpTools(await getExaApiKey(true));
+  mcpToolsLoaded = tools.length > 0;
 
   for (const tool of tools) {
     pi.registerTool({
