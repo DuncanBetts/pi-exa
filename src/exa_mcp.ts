@@ -2,10 +2,11 @@ import { getAgentDir } from "@mariozechner/pi-coding-agent";
 import { Client } from "@modelcontextprotocol/sdk/client";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp";
 import { Tool } from "@modelcontextprotocol/sdk/types";
-import { access, mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
 const EXA_MCP_CACHE_FILE = join(getAgentDir(), "exa-mcp-cache");
+const EXA_MCP_TOOLS_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const EXA_MCP_SERVER = "https://mcp.exa.ai/mcp";
 
 let exaMcpClientPromise: Promise<Client> | undefined;
@@ -61,18 +62,32 @@ export async function closeExaMcp() {
   await client.close();
 }
 
-// NOTE: no error handling for when there's no cache data and MCP server is down
 export async function getExaMcpTools(apiKey?: string): Promise<Tool[]> {
+  let cachedTools: Tool[] | undefined;
+
   try {
-    await access(EXA_MCP_CACHE_FILE);
-    const cachedTools = await readFile(EXA_MCP_CACHE_FILE, "utf8");
-    return JSON.parse(cachedTools);
-  } catch {
+    const cacheStats = await stat(EXA_MCP_CACHE_FILE);
+    const cacheContents = await readFile(EXA_MCP_CACHE_FILE, "utf8");
+    const parsedTools = JSON.parse(cacheContents) as Tool[];
+    cachedTools = parsedTools;
+
+    if (Date.now() - cacheStats.mtimeMs < EXA_MCP_TOOLS_CACHE_TTL_MS) {
+      return parsedTools;
+    }
+  } catch {}
+
+  try {
     const client = await getExaMcp(apiKey);
     const { tools } = await client.listTools();
 
     await mkdir(dirname(EXA_MCP_CACHE_FILE), { recursive: true });
     await writeFile(EXA_MCP_CACHE_FILE, JSON.stringify(tools, null, 2));
     return tools;
+  } catch (err) {
+    // NOTE: no handling for when both cache and MCP server isn't available
+    if (cachedTools) {
+      return cachedTools;
+    }
+    throw err;
   }
 }
