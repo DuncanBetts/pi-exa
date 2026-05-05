@@ -124,7 +124,7 @@ export default async function (pi: ExtensionAPI) {
 
       renderResult: renderTruncatedResult,
 
-      async execute(toolCallId, params, signal, _onUpdate, _ctx) {
+      async execute(_toolCallId, params, signal, _onUpdate, _ctx) {
         try {
           const client = await getExaMcp(exaApiKey);
           const result = await client.callTool(
