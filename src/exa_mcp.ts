@@ -16,7 +16,7 @@ export function getExaMcp(apiKey?: string): Promise<Client> {
     // the same promise
     // this variable only stores the result of execution, as the async function
     // is ran immediately
-    exaMcpClientPromise = (async () => {
+    const clientPromise = (async () => {
       const exaMcpUrl = new URL("https://mcp.exa.ai/mcp");
       exaMcpUrl.searchParams.set(
         "tools",
@@ -33,10 +33,18 @@ export function getExaMcp(apiKey?: string): Promise<Client> {
         { capabilities: {} },
       );
 
-      // TODO: error handling for connection
       await client.connect(transport);
       return client;
     })();
+
+    exaMcpClientPromise = clientPromise.catch((err) => {
+      // check if the current singleton instance is the one with error
+      // we do not want to clear non-error instances
+      if (clientPromise === exaMcpClientPromise) {
+        exaMcpClientPromise = undefined;
+      }
+      throw err;
+    });
   }
 
   return exaMcpClientPromise;
