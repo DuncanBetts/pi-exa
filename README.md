@@ -6,7 +6,7 @@ Web search, fetching, and deep research for your Pi Agent. Powered by [Exa](http
 
 ## Why Exa for your Agent
 
-- Free - 1000 requests/month, via the [Exa MCP](https://github.com/exa-labs/exa-mcp-server) server
+- Free - 1000 requests/month for web search and fetch, via the [Exa MCP server](https://github.com/exa-labs/exa-mcp-server)
 - Semantic search - understands intent, not just keyword searches
 - LLM-friendly results - Exa returns clean snippets instead of dumping entire sites that nuke your context window
 - Get what you want - Your agent can make sense of Exa's multiple search filters to get you narrowed results
@@ -17,20 +17,39 @@ Web search, fetching, and deep research for your Pi Agent. Powered by [Exa](http
 pi install npm:pi-exa
 ```
 
-**Optional**: An Exa API key for the deep research tool. To register your key:
+**Optional**: Exa API key for the deep search tool. To register your key:
 
 ```
-/exa-login
+pi /exa-login
 ```
+
+## Features
+
+### Exa MCP
+
+- Use web search and content fetching with no API key required
+- Toggle paid Exa MCP usage with `/exa-mcp-use-api-key on|off`
+- Lazy-loaded Exa MCP server that connects on first tool call
+- Cached MCP tool schemas so Pi can register tools during startup even before connecting
+
+### Exa Advanced Web Search
+
+- Let your agent use every Exa search filter
+- Disabled by default to save context (~1200 tokens)
+- Agent-enabled advanced search via `enable_web_search_advanced_exa`, or manual opt-in with `--exa-advanced`
+
+### Deep Search
+
+- Give your agent access to Deep Search via the Exa API, with `deep-lite`, `deep`, and `deep-reasoning` modes
 
 ## Docs
 
 ### Commands
 
-| command                | description                                                                                                                    |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `/exa-login`           | Writes your Exa API key to `.pi/agents/auth.json`                                                                              |
-| `/exa-logout`          | Removes your API key from `.pi/agents/auth.json`                                                                               |
+| command                | description                                                                                                                       |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `/exa-login`           | Writes your Exa API key to `.pi/agents/auth.json`                                                                                 |
+| `/exa-logout`          | Removes your API key from `.pi/agents/auth.json`                                                                                  |
 | `/exa-mcp-use-api-key` | Uses your API key when calling Exa MCP server. You will be billed. Only use when you've reached your rate limit for free requests |
 
 ### Tools
