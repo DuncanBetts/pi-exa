@@ -1,8 +1,8 @@
 # Pi Exa
 
-Web search, fetch and deep research for your Pi Agent. Powered by [Exa](https://exa.ai)
+Web search, fetching, and deep research for your Pi Agent. Powered by [Exa](https://exa.ai)
 
-**No API key needed** for web search and fetch. Works out of the box, just install and your agent starts using.
+**No API key needed** for web search and fetch. Works out of the box, just install it and your agent starts using it.
 
 ## Why Exa for your Agent
 
@@ -30,8 +30,8 @@ pi install npm:pi-exa
 | command                | description                                                                                                                    |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | `/exa-login`           | Writes your Exa API key to `.pi/agents/auth.json`                                                                              |
-| `/exa-logout`          | Remove your API key from `.pi/agents/auth.json`                                                                                |
-| `/exa-mcp-use-api-key` | Uses your API key when calling Exa MCP server. You will be billed. Only use when you reached your rate limit for free requests |
+| `/exa-logout`          | Removes your API key from `.pi/agents/auth.json`                                                                               |
+| `/exa-mcp-use-api-key` | Uses your API key when calling Exa MCP server. You will be billed. Only use when you've reached your rate limit for free requests |
 
 ### Tools
 
