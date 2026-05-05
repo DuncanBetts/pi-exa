@@ -2,7 +2,7 @@ import { keyHint, Theme } from "@mariozechner/pi-coding-agent";
 import type { Component } from "@mariozechner/pi-tui";
 import { Text } from "@mariozechner/pi-tui";
 
-const PREVIEW_LINES = 10;
+const PREVIEW_LINES = 3;
 
 export function abortPromise(signal?: AbortSignal): Promise<never> {
   if (!signal) return new Promise(() => {});

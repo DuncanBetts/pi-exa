@@ -120,11 +120,10 @@ export default async function (pi: ExtensionAPI) {
     name: "enable_web_search_advanced_exa",
     label: "enable_web_search_advanced_exa",
     description:
-      "Enable the advanced Exa web search tool for granular filters when simple search is insufficient user's query.",
-    promptSnippet:
-      "Enables Exa web search with all the filters for the next turn",
+      "Enable the advanced Exa web search tool when you need multiple filters to narrow search results.",
+    promptSnippet: "Enables Exa web search with all advanced filters",
     promptGuidelines: [
-      "Call this tool only when simple search is insufficient and you need to use many advanced filters such as category, web domain name inclusion/exclusion, published date range, location based results, additional guiding prompts",
+      "Use enable_web_search_advanced_exa if the user's query has multiple search constraints. This includes, but not limited to: category, domains/website inclusions or exclusions, published date ranges, location constraints. If you can use 2 or more filters, call enable_web_search_advanced_exa. Prefer advanced search when correctness depends on narrowing results with specific filters rather than finding general information.",
     ],
     parameters: Type.Object({
       reason: Type.String({
@@ -158,7 +157,7 @@ export default async function (pi: ExtensionAPI) {
         content: [
           {
             type: "text" as const,
-            text: "web_search_advanced_exa is now enabled. On the next turn, call web_search_advanced_exa with the needed advanced filters.",
+            text: "web_search_advanced_exa is now enabled. Continue your loop and call web_search_advanced_exa with the necessary filters.",
           },
         ],
         details: { available: true },
