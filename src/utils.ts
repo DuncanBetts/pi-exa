@@ -4,6 +4,19 @@ import { Text } from "@mariozechner/pi-tui";
 
 const PREVIEW_LINES = 10;
 
+export function abortPromise(signal?: AbortSignal): Promise<never> {
+  if (!signal) return new Promise(() => {});
+  if (signal.aborted) return Promise.reject(new Error("Request was cancelled"));
+
+  return new Promise((_, reject) => {
+    signal.addEventListener(
+      "abort",
+      () => reject(new Error("Request was cancelled")),
+      { once: true },
+    );
+  });
+}
+
 export function renderTruncatedResult(
   result: { content: Array<{ type: string; text?: string }> },
   { expanded }: { expanded: boolean },

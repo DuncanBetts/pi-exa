@@ -9,9 +9,9 @@ const EXA_MCP_CACHE_FILE = join(getAgentDir(), "exa-mcp-cache");
 const EXA_MCP_TOOLS_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const EXA_MCP_SERVER = "https://mcp.exa.ai/mcp";
 
+// singleton MCP client instance
 let exaMcpClientPromise: Promise<Client> | undefined;
 
-// singleton MCP client instance
 export function getExaMcp(apiKey?: string): Promise<Client> {
   if (!exaMcpClientPromise) {
     // return the async promise to ensure that concurrent callers can invoke
@@ -84,7 +84,8 @@ export async function getExaMcpTools(apiKey?: string): Promise<Tool[]> {
     await writeFile(EXA_MCP_CACHE_FILE, JSON.stringify(tools, null, 2));
     return tools;
   } catch (err) {
-    // NOTE: no handling for when both cache and MCP server isn't available
+    // NOTE: no handling for when cache and MCP server isn't available
+    // triggers when cold install hits an offline server
     if (cachedTools) {
       return cachedTools;
     }

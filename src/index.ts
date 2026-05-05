@@ -3,7 +3,7 @@ import { Type } from "typebox";
 import { getExa } from "./exa";
 import { closeExaMcp, getExaMcp, getExaMcpTools } from "./exa_mcp";
 import { deepSearch, DeepSearchParams } from "./exa_deep_search";
-import { renderTruncatedResult } from "./utils";
+import { abortPromise, renderTruncatedResult } from "./utils";
 
 const EXA_PROVIDER = "exa";
 
@@ -88,25 +88,31 @@ export default async function (pi: ExtensionAPI) {
         details: {},
       });
 
-      const result = await deepSearch(getExa(exaApiKey), {
-        query: params.query,
-        numResults: params.numResults,
-        type: params.type,
-        category: params.category,
-      });
+      try {
+        const result = await Promise.race([
+          deepSearch(getExa(exaApiKey), {
+            query: params.query,
+            numResults: params.numResults,
+            type: params.type,
+            category: params.category,
+          }),
+          abortPromise(signal),
+        ]);
 
-      if (signal?.aborted) {
+        const text = JSON.stringify(result, null, 2);
         return {
-          content: [{ type: "text", text: "Request was cancelled" }],
+          content: [{ type: "text" as const, text }],
           details: {},
         };
+      } catch (err) {
+        if (signal?.aborted) {
+          return {
+            content: [{ type: "text", text: "Request was cancelled" }],
+            details: {},
+          };
+        }
+        throw err;
       }
-
-      const text = JSON.stringify(result, null, 2);
-      return {
-        content: [{ type: "text" as const, text }],
-        details: {},
-      };
     },
   });
 
@@ -124,8 +130,8 @@ export default async function (pi: ExtensionAPI) {
 
       async execute(_toolCallId, params, signal, _onUpdate, _ctx) {
         try {
-          const client = await getExaMcp(exaApiKey);
-          const result = await client.callTool(
+          const mcpClient = await getExaMcp(exaApiKey);
+          const result = await mcpClient.callTool(
             { name: tool.name, arguments: params as Record<string, unknown> },
             undefined,
             { signal },
