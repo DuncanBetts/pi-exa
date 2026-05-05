@@ -50,6 +50,7 @@ pi /exa-login
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | `/exa-login`           | Writes your Exa API key to `.pi/agents/auth.json`                                                                                 |
 | `/exa-logout`          | Removes your API key from `.pi/agents/auth.json`                                                                                  |
+| `/exa-status`          | Shows the Pi Exa extension status                                                                                                 |
 | `/exa-mcp-use-api-key` | Uses your API key when calling Exa MCP server. You will be billed. Only use when you've reached your rate limit for free requests |
 
 ### Tools

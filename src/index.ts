@@ -79,6 +79,46 @@ export default async function (pi: ExtensionAPI) {
     },
   });
 
+  pi.registerCommand("exa-status", {
+    description: "Show Exa extension status",
+    handler: async (_args, ctx) => {
+      const storedCred = authStorage.get(EXA_PROVIDER);
+      const hasStoredKey =
+        storedCred?.type === "api_key" && Boolean(storedCred.key);
+      const hasEnvKey = Boolean(process.env.EXA_API_KEY);
+
+      const config = await getPiExaConfig();
+
+      const advancedSearchEnabled = pi
+        .getActiveTools()
+        .includes("web_search_advanced_exa");
+
+      ctx.ui.setStatus("pi-exa", "Checking Exa MCP...");
+      const mcpHealthy = await (async () => {
+        try {
+          const client = await getExaMcp(await getExaApiKey(true));
+          await client.listTools();
+          return true;
+        } catch {
+          return false;
+        } finally {
+          ctx.ui.setStatus("pi-exa", undefined);
+        }
+      })();
+
+      const lines = [
+        "Exa status:",
+        `- Stored API key: ${hasStoredKey ? "yes" : "no"}`,
+        `- EXA_API_KEY env var: ${hasEnvKey ? "yes" : "no"}`,
+        `- MCP uses API key: ${config.mcpUseApiKey ? "yes" : "no"}`,
+        `- web_search_advanced_exa enabled: ${advancedSearchEnabled ? "yes" : "no"}`,
+        `- Exa MCP tools registered: ${mcpToolsLoaded ? "yes" : "no"}`,
+        `- MCP live check: ${mcpHealthy ? "healthy" : "failed"}`,
+      ];
+      ctx.ui.notify(lines.join("\n"), "info");
+    },
+  });
+
   pi.registerCommand("exa-mcp-use-api-key", {
     description: "Enable/disable using your Exa API key for the Exa MCP server",
     handler: async (args, ctx) => {
