@@ -1,5 +1,5 @@
 import { Static, Type } from "typebox";
-import { StringEnum } from "@mariozechner/pi-ai";
+import { StringEnum } from "@earendil-works/pi-ai";
 import { type Exa, type BaseSearchOptions, type DeepSearchType } from "exa-js";
 
 export const DeepSearchParams = Type.Object({
