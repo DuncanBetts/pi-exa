@@ -27,7 +27,21 @@ export default async function (pi: ExtensionAPI) {
   const authStorage = AuthStorage.create();
   let mcpToolsLoaded = false;
 
+  async function updateDeepSearchToolAvailability() {
+    if (await getExaApiKey()) {
+      pi.setActiveTools([
+        ...new Set([...pi.getActiveTools(), "deep_search_exa"]),
+      ]);
+      return;
+    }
+
+    pi.setActiveTools(
+      pi.getActiveTools().filter((name) => name !== "deep_search_exa"),
+    );
+  }
+
   pi.on("session_start", async (_event, ctx) => {
+    await updateDeepSearchToolAvailability();
     if (!mcpToolsLoaded) {
       ctx.ui.notify(
         "Exa MCP tools were not registered as the MCP server was unavailable. /reload to try again.",
@@ -59,6 +73,7 @@ export default async function (pi: ExtensionAPI) {
         authStorage.set(EXA_PROVIDER, { type: "api_key", key });
         resetExa();
         await closeExaMcp();
+        await updateDeepSearchToolAvailability();
         ctx.ui.notify("Exa API key saved.", "info");
       }
     },
@@ -70,6 +85,7 @@ export default async function (pi: ExtensionAPI) {
       authStorage.remove(EXA_PROVIDER);
       resetExa();
       await closeExaMcp();
+      await updateDeepSearchToolAvailability();
       ctx.ui.notify(
         process.env.EXA_API_KEY
           ? "Stored Exa API key removed. EXA_API_KEY env var is still set and will be used."
