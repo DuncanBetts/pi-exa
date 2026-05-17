@@ -1,4 +1,7 @@
-import { AuthStorage, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import {
+  AuthStorage,
+  type ExtensionAPI,
+} from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { getExa, resetExa } from "./exa";
 import { closeExaMcp, getExaMcp, getExaMcpTools } from "./exa_mcp";
@@ -44,22 +47,36 @@ export default async function (pi: ExtensionAPI) {
     );
   }
 
+  async function updateAdvancedSearchToolAvailability() {
+    const config = await getPiExaConfig();
+
+    if (config.advancedSearchEnabled === true) {
+      const advancedTool = pi
+        .getAllTools()
+        .find((tool) => tool.name === "web_search_advanced_exa");
+
+      if (advancedTool) {
+        pi.setActiveTools([
+          ...new Set([...pi.getActiveTools(), "web_search_advanced_exa"]),
+        ]);
+      }
+      return;
+    }
+
+    pi.setActiveTools(
+      pi.getActiveTools().filter((name) => name !== "web_search_advanced_exa"),
+    );
+  }
+
   pi.on("session_start", async (_event, ctx) => {
     await updateDeepSearchToolAvailability();
+    await updateAdvancedSearchToolAvailability();
     if (!mcpToolsLoaded) {
       ctx.ui.notify(
         "Exa MCP tools were not registered as the MCP server was unavailable. /reload to try again.",
         "warning",
       );
     }
-
-    if (pi.getFlag("exa-advanced")) {
-      return;
-    }
-    const activeTools = pi.getActiveTools();
-    pi.setActiveTools(
-      activeTools.filter((name) => name !== "web_search_advanced_exa"),
-    );
   });
 
   pi.registerCommand("exa-login", {
@@ -234,7 +251,10 @@ export default async function (pi: ExtensionAPI) {
         return;
       }
 
-      if (value === "on") {
+      const enabled = value === "on";
+      if (enabled) {
+        await setPiExaConfig({ advancedSearchEnabled: true });
+
         const advancedTool = pi
           .getAllTools()
           .find((tool) => tool.name === "web_search_advanced_exa");
@@ -257,6 +277,7 @@ export default async function (pi: ExtensionAPI) {
         return;
       }
 
+      await setPiExaConfig({ advancedSearchEnabled: false });
       pi.setActiveTools(
         activeTools.filter((name) => name !== "web_search_advanced_exa"),
       );
@@ -265,13 +286,6 @@ export default async function (pi: ExtensionAPI) {
         "info",
       );
     },
-  });
-
-  pi.registerFlag("exa-advanced", {
-    description:
-      "Enables the advanced Exa web search tool for more granular controls (~1200 extra tokens)",
-    type: "boolean",
-    default: false,
   });
 
   pi.registerTool({

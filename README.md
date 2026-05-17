@@ -36,7 +36,7 @@ pi /exa-login
 
 - Let your agent use every Exa search filter
 - Disabled by default to save context (~1200 tokens)
-- Enable for the session with `/exa-advanced-search on` or at startup with `--exa-advanced`
+- Enable or disable persistently with `/exa-advanced-search on|off`
 
 ### Deep Search
 
@@ -72,12 +72,6 @@ Disabled by default:
 | name                      | calls                                                 | description                                                                                   |
 | ------------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------- |
 | `web_search_advanced_exa` | [Exa MCP](https://github.com/exa-labs/exa-mcp-server) | `web_search_exa` but with all filter parameters available (~1200 tokens to load into context) |
-
-### Flags
-
-| name             | description                                                            |
-| ---------------- | ---------------------------------------------------------------------- |
-| `--exa-advanced` | Enables the `web_search_advanced_exa` tool by default for this session |
 
 ## Bugs and suggestions
 
