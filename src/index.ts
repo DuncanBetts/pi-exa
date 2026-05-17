@@ -27,7 +27,25 @@ export default async function (pi: ExtensionAPI) {
   const authStorage = AuthStorage.create();
   let mcpToolsLoaded = false;
 
+  async function updateDeepSearchToolAvailability() {
+    const config = await getPiExaConfig();
+    const shouldEnable =
+      Boolean(await getExaApiKey()) && config.deepSearchEnabled !== false;
+
+    if (shouldEnable) {
+      pi.setActiveTools([
+        ...new Set([...pi.getActiveTools(), "deep_search_exa"]),
+      ]);
+      return;
+    }
+
+    pi.setActiveTools(
+      pi.getActiveTools().filter((name) => name !== "deep_search_exa"),
+    );
+  }
+
   pi.on("session_start", async (_event, ctx) => {
+    await updateDeepSearchToolAvailability();
     if (!mcpToolsLoaded) {
       ctx.ui.notify(
         "Exa MCP tools were not registered as the MCP server was unavailable. /reload to try again.",
@@ -59,6 +77,7 @@ export default async function (pi: ExtensionAPI) {
         authStorage.set(EXA_PROVIDER, { type: "api_key", key });
         resetExa();
         await closeExaMcp();
+        await updateDeepSearchToolAvailability();
         ctx.ui.notify("Exa API key saved.", "info");
       }
     },
@@ -70,6 +89,7 @@ export default async function (pi: ExtensionAPI) {
       authStorage.remove(EXA_PROVIDER);
       resetExa();
       await closeExaMcp();
+      await updateDeepSearchToolAvailability();
       ctx.ui.notify(
         process.env.EXA_API_KEY
           ? "Stored Exa API key removed. EXA_API_KEY env var is still set and will be used."
@@ -89,9 +109,11 @@ export default async function (pi: ExtensionAPI) {
 
       const config = await getPiExaConfig();
 
-      const advancedSearchEnabled = pi
-        .getActiveTools()
-        .includes("web_search_advanced_exa");
+      const activeTools = pi.getActiveTools();
+      const advancedSearchEnabled = activeTools.includes(
+        "web_search_advanced_exa",
+      );
+      const deepSearchEnabled = activeTools.includes("deep_search_exa");
 
       ctx.ui.setStatus("pi-exa", "Checking Exa MCP...");
       const mcpHealthy = await (async () => {
@@ -111,11 +133,54 @@ export default async function (pi: ExtensionAPI) {
         `- Stored API key: ${hasStoredKey ? "yes" : "no"}`,
         `- EXA_API_KEY env var: ${hasEnvKey ? "yes" : "no"}`,
         `- MCP uses API key: ${config.mcpUseApiKey ? "yes" : "no"}`,
+        `- deep_search_exa enabled: ${deepSearchEnabled ? "yes" : "no"}`,
         `- web_search_advanced_exa enabled: ${advancedSearchEnabled ? "yes" : "no"}`,
         `- Exa MCP tools registered: ${mcpToolsLoaded ? "yes" : "no"}`,
         `- MCP live check: ${mcpHealthy ? "healthy" : "failed"}`,
       ];
       ctx.ui.notify(lines.join("\n"), "info");
+    },
+  });
+
+  pi.registerCommand("exa-deep-search", {
+    description: "Enable/disable the Exa deep search tool",
+    handler: async (args, ctx) => {
+      const value = args.trim().toLowerCase();
+
+      if (!value) {
+        const hasApiKey = Boolean(await getExaApiKey());
+        const isEnabled = pi.getActiveTools().includes("deep_search_exa");
+        ctx.ui.notify(
+          hasApiKey
+            ? `Exa deep search is currently ${isEnabled ? "enabled" : "disabled"}. Use /exa-deep-search on|off to toggle.`
+            : "deep_search_exa requires an Exa API key. Set EXA_API_KEY or run /exa-login.",
+          hasApiKey ? "info" : "warning",
+        );
+        return;
+      }
+
+      if (value !== "on" && value !== "off") {
+        ctx.ui.notify("Usage: /exa-deep-search on|off", "info");
+        return;
+      }
+
+      const enabled = value === "on";
+      const hasApiKey = Boolean(await getExaApiKey());
+      await setPiExaConfig({ deepSearchEnabled: enabled });
+      await updateDeepSearchToolAvailability();
+
+      if (enabled && !hasApiKey) {
+        ctx.ui.notify(
+          "deep_search_exa requires an Exa API key. Set EXA_API_KEY or run /exa-login.",
+          "warning",
+        );
+        return;
+      }
+
+      ctx.ui.notify(
+        `${enabled ? "Enabled" : "Disabled"} deep_search_exa. The agent will ${enabled ? "see" : "stop seeing"} it on the next turn.`,
+        "info",
+      );
     },
   });
 
