@@ -1,6 +1,7 @@
 import {
   AuthStorage,
   type ExtensionAPI,
+  type ExtensionUIContext,
 } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { getExa, resetExa } from "./exa";
@@ -50,8 +51,13 @@ export default async function (pi: ExtensionAPI) {
     return pi.getActiveTools().includes("deep_search_exa");
   }
 
-  async function updateDeepSearchStatus(ctx: { ui: { setStatus: (key: string, text: string | undefined) => void } }) {
-    ctx.ui.setStatus("pi-exa", deepSearchEnabled() ? "Deep search: on" : undefined);
+  async function updateDeepSearchStatus(ctx: { ui: ExtensionUIContext }) {
+    ctx.ui.setStatus(
+      "pi-exa",
+      deepSearchEnabled()
+        ? ctx.ui.theme.fg("muted", "exa deep search: on")
+        : undefined,
+    );
   }
 
   async function updateAdvancedSearchToolAvailability() {
