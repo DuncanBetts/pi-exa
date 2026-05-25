@@ -46,6 +46,14 @@ export default async function (pi: ExtensionAPI) {
     );
   }
 
+  function deepSearchEnabled() {
+    return pi.getActiveTools().includes("deep_search_exa");
+  }
+
+  async function updateDeepSearchStatus(ctx: { ui: { setStatus: (key: string, text: string | undefined) => void } }) {
+    ctx.ui.setStatus("pi-exa", deepSearchEnabled() ? "Deep search: on" : undefined);
+  }
+
   async function updateAdvancedSearchToolAvailability() {
     const config = await getPiExaConfig();
 
@@ -70,6 +78,7 @@ export default async function (pi: ExtensionAPI) {
   pi.on("session_start", async (_event, ctx) => {
     await updateDeepSearchToolAvailability();
     await updateAdvancedSearchToolAvailability();
+    await updateDeepSearchStatus(ctx);
     if (!mcpToolsLoaded) {
       ctx.ui.notify(
         "Exa MCP tools were not registered as the MCP server was unavailable. /reload to try again.",
@@ -94,6 +103,7 @@ export default async function (pi: ExtensionAPI) {
         resetExa();
         await closeExaMcp();
         await updateDeepSearchToolAvailability();
+        await updateDeepSearchStatus(ctx);
         ctx.ui.notify("Exa API key saved.", "info");
       }
     },
@@ -106,6 +116,7 @@ export default async function (pi: ExtensionAPI) {
       resetExa();
       await closeExaMcp();
       await updateDeepSearchToolAvailability();
+      await updateDeepSearchStatus(ctx);
       ctx.ui.notify(
         process.env.EXA_API_KEY
           ? "Stored Exa API key removed. EXA_API_KEY env var is still set and will be used."
@@ -140,7 +151,7 @@ export default async function (pi: ExtensionAPI) {
         } catch {
           return false;
         } finally {
-          ctx.ui.setStatus("pi-exa", undefined);
+          await updateDeepSearchStatus(ctx);
         }
       })();
 
@@ -199,6 +210,7 @@ export default async function (pi: ExtensionAPI) {
         return;
       }
 
+      await updateDeepSearchStatus(ctx);
       ctx.ui.notify(
         `${enabled ? "Enabled" : "Disabled"} deep_search_exa. The agent will ${enabled ? "see" : "stop seeing"} it on the next turn.`,
         "info",
